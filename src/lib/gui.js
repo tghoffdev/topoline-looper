@@ -1,6 +1,6 @@
 import GUI from 'lil-gui';
 
-export function setupGUI(renderer, exporter) {
+export function setupGUI(renderer, exporter, snippetExporter) {
   const gui = new GUI({ title: 'Controls' });
 
   // Effect selector
@@ -20,6 +20,10 @@ export function setupGUI(renderer, exporter) {
   const topoParams = renderer.effects.topographic.params;
   const topoEffect = renderer.effects.topographic;
 
+  topoFolder.add(topoParams, 'mode', ['amoeba', 'concentric'])
+    .name('Mode')
+    .onChange(() => topoEffect.updateParams());
+
   topoFolder.add(topoParams, 'lineCount', 5, 50, 1)
     .name('Line Count')
     .onChange(() => topoEffect.updateParams());
@@ -36,7 +40,7 @@ export function setupGUI(renderer, exporter) {
     .name('Animation Speed')
     .onChange(() => topoEffect.updateParams());
 
-  topoFolder.add(topoParams, 'distortion', 0, 1, 0.05)
+  topoFolder.add(topoParams, 'distortion', 0, 0.5, 0.01)
     .name('Distortion')
     .onChange(() => topoEffect.updateParams());
 
@@ -57,7 +61,7 @@ export function setupGUI(renderer, exporter) {
   const halfParams = renderer.effects.halftone.params;
   const halfEffect = renderer.effects.halftone;
 
-  halfFolder.add(halfParams, 'gridSize', 20, 120, 1)
+  halfFolder.add(halfParams, 'gridSize', 5, 120, 1)
     .name('Grid Density')
     .onChange(() => halfEffect.updateParams());
 
@@ -71,6 +75,14 @@ export function setupGUI(renderer, exporter) {
 
   halfFolder.add(halfParams, 'colorOffset', 0, 3, 0.1)
     .name('Color Offset')
+    .onChange(() => halfEffect.updateParams());
+
+  halfFolder.add(halfParams, 'noiseAmount', 0, 1, 0.01)
+    .name('Noise Amount')
+    .onChange(() => halfEffect.updateParams());
+
+  halfFolder.add(halfParams, 'edgeRoundness', 0, 1, 0.01)
+    .name('Edge Roundness')
     .onChange(() => halfEffect.updateParams());
 
   halfFolder.addColor(halfParams, 'color1')
@@ -96,7 +108,24 @@ export function setupGUI(renderer, exporter) {
   const exportParams = exporter.params;
 
   exportFolder.add(exportParams, 'duration', 1, 10, 0.5)
-    .name('Duration (s)');
+    .name('Duration (s)')
+    .onChange((value) => {
+      // Sync loop duration with GIF duration for perfect loops
+      topoParams.loopDuration = value;
+      halfParams.loopDuration = value;
+      topoEffect.updateParams();
+      halfEffect.updateParams();
+    });
+
+  const seamlessControl = { seamless: false };
+  exportFolder.add(seamlessControl, 'seamless')
+    .name('Seamless Loop')
+    .onChange((value) => {
+      topoParams.seamless = value;
+      halfParams.seamless = value;
+      topoEffect.updateParams();
+      halfEffect.updateParams();
+    });
 
   exportFolder.add(exportParams, 'fps', 10, 30, 1)
     .name('FPS');
@@ -108,10 +137,12 @@ export function setupGUI(renderer, exporter) {
     .name('Size');
 
   const exportBtn = {
-    export: () => exporter.export()
+    exportGif: () => exporter.export(),
+    exportJS: () => snippetExporter.export()
   };
 
-  exportFolder.add(exportBtn, 'export').name('Export GIF');
+  exportFolder.add(exportBtn, 'exportGif').name('Export GIF');
+  exportFolder.add(exportBtn, 'exportJS').name('Export JS Snippet');
 
   function updateFolderVisibility(effect) {
     if (effect === 'topographic') {

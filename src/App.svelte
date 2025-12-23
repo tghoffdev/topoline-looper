@@ -3,16 +3,19 @@
   import { createRenderer } from './lib/renderer.js';
   import { setupGUI } from './lib/gui.js';
   import { GifExporter } from './lib/gifExporter.js';
+  import { SnippetExporter } from './lib/snippetExporter.js';
 
   let container;
   let renderer = null;
   let gui = null;
-  let exporter = null;
+  let gifExporter = null;
+  let snippetExporter = null;
 
   onMount(() => {
     renderer = createRenderer(container);
-    exporter = new GifExporter(renderer);
-    gui = setupGUI(renderer, exporter);
+    gifExporter = new GifExporter(renderer);
+    snippetExporter = new SnippetExporter(renderer);
+    gui = setupGUI(renderer, gifExporter, snippetExporter);
     renderer.start();
   });
 
